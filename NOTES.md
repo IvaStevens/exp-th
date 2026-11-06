@@ -44,4 +44,5 @@
 - **Investigation notes (AI, from my findings).** I used AI to write up notes on the issues I had found, so each one could be investigated for a resolution: the stale startup cache, `splice(-1)` in `remove`, the client `load` pattern, the lock-field mismatch and the non-atomic bulk delete.
 - **Fixes (AI).** I used AI to implement the fixes for the issues identified in those notes, and to write the tests and this file.
 - **Prioritisation and decisions (me).** I decided the order of the fixes (the locked/unlocked bulk delete first, as the README asks) and made the calls on unclear requirements, e.g. all-or-nothing bulk delete and not allowing locked rows to be selected.
+- **Review of the changes (me).** I manually reviewed the code changes the AI made.
 - **Verification.** Tests (`jest`, 12 passing), `nest build`, client `tsc --noEmit` + `vite build`, and an HTTP check of the API were run against the changes.
