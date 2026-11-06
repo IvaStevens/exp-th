@@ -16,7 +16,8 @@ export class DocumentsStore {
   }
 
   findById(id: string): Document | undefined {
-    return this.documents.find((doc) => doc.id === id);
+    const document = this.documents.find((doc) => doc.id === id);
+    return document ? { ...document } : undefined;
   }
 
   insert(title: string): Document {
@@ -31,8 +32,10 @@ export class DocumentsStore {
     return { ...document };
   }
 
-  remove(id: string): void {
+  remove(id: string): boolean {
     const index = this.documents.findIndex((doc) => doc.id === id);
+    if (index === -1) return false; // splice(-1, 1) would delete the last document
     this.documents.splice(index, 1);
+    return true;
   }
 }

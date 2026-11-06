@@ -7,7 +7,7 @@ interface DocumentListProps {
 }
 
 function isLocked(doc: Doc) {
-  return doc.locked;
+  return doc.lockedBy !== null;
 }
 
 function formatDate(value: string) {
@@ -19,10 +19,12 @@ function formatDate(value: string) {
 }
 
 export default function DocumentList({ documents, selectedIds, onSelectionChange }: DocumentListProps) {
-  const allSelected = documents.length > 0 && selectedIds.length === documents.length;
+  // Locked documents can't be deleted, so they can't be selected.
+  const selectableIds = documents.filter((doc) => !isLocked(doc)).map((doc) => doc.id);
+  const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selectedIds.includes(id));
 
   const toggleAll = () => {
-    onSelectionChange(allSelected ? [] : documents.map((doc) => doc.id));
+    onSelectionChange(allSelected ? [] : selectableIds);
   };
 
   const toggleOne = (id: string) => {
@@ -36,7 +38,13 @@ export default function DocumentList({ documents, selectedIds, onSelectionChange
       <thead>
         <tr>
           <th className="checkbox-cell">
-            <input type="checkbox" checked={allSelected} onChange={toggleAll} />
+            <input
+              type="checkbox"
+              aria-label="Select all documents"
+              checked={allSelected}
+              disabled={selectableIds.length === 0}
+              onChange={toggleAll}
+            />
           </th>
           <th>Title</th>
           <th>Last updated</th>
@@ -51,6 +59,8 @@ export default function DocumentList({ documents, selectedIds, onSelectionChange
                 type="checkbox"
                 aria-label={`Select ${doc.title}`}
                 checked={selectedIds.includes(doc.id)}
+                disabled={isLocked(doc)}
+                title={isLocked(doc) ? `Locked by ${doc.lockedBy}` : undefined}
                 onChange={() => toggleOne(doc.id)}
               />
             </td>

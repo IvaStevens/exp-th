@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import CreateDocumentForm from './CreateDocumentForm';
 import DocumentList from './DocumentList';
-import { bulkDeleteDocuments, createDocument, fetchDocuments } from './api';
+import { ApiError, bulkDeleteDocuments, createDocument, fetchDocuments } from './api';
 import type { Doc } from './types';
 
 const GENERIC_ERROR = 'Something went wrong. Please try again.';
@@ -11,15 +11,26 @@ export default function App() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const latestRequest = useRef(0);
 
+  // Only the most recent load may write state, so a slow older response
+  // (e.g. StrictMode's double mount) can't overwrite a newer list.
+  // The "Loading…" placeholder is shown for the initial load only; later
+  // reloads swap the list in place.
   const load = useCallback(async () => {
-    setLoading(true);
+    const requestId = ++latestRequest.current;
     try {
-      setDocuments(await fetchDocuments());
+      const fetched = await fetchDocuments();
+      if (requestId !== latestRequest.current) return;
+      setDocuments(fetched);
+      // Drop selections that no longer exist (e.g. deleted elsewhere).
+      const existing = new Set(fetched.map((doc) => doc.id));
+      setSelectedIds((ids) => ids.filter((id) => existing.has(id)));
+      setError(null);
     } catch {
-      setError(GENERIC_ERROR);
+      if (requestId === latestRequest.current) setError(GENERIC_ERROR);
     } finally {
-      setLoading(false);
+      if (requestId === latestRequest.current) setLoading(false);
     }
   }, []);
 
@@ -27,14 +38,16 @@ export default function App() {
     load();
   }, [load]);
 
-  const handleCreate = async (title: string) => {
+  const handleCreate = async (title: string): Promise<boolean> => {
     setError(null);
     try {
       await createDocument(title);
-      await load();
-    } catch {
-      setError(GENERIC_ERROR);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : GENERIC_ERROR);
+      return false;
     }
+    await load();
+    return true;
   };
 
   const handleDeleteSelected = async () => {
@@ -45,11 +58,14 @@ export default function App() {
     setError(null);
     try {
       await bulkDeleteDocuments(selectedIds);
-    } catch {
-      setError(GENERIC_ERROR);
-    } finally {
       setSelectedIds([]);
       await load();
+    } catch (err) {
+      // The server deletes nothing on failure, so keep the selection and let the
+      // user deselect the offending (locked) documents and retry. Reload first
+      // (a successful load clears the error), then show the failure.
+      await load();
+      setError(err instanceof ApiError ? err.message : GENERIC_ERROR);
     }
   };
 
@@ -69,7 +85,11 @@ export default function App() {
 
       <CreateDocumentForm onCreate={handleCreate} />
 
-      {error && <p className="status error">{error}</p>}
+      {error && (
+        <p className="status error" role="alert">
+          {error}
+        </p>
+      )}
       {loading ? (
         <p className="status">Loading documents…</p>
       ) : (
