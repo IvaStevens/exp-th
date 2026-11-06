@@ -1,7 +1,8 @@
 import { useState } from 'react';
 
 interface CreateDocumentFormProps {
-  onCreate: (title: string) => Promise<void>;
+  /** Resolves true when the document was created, so the form knows whether to clear itself. */
+  onCreate: (title: string) => Promise<boolean>;
 }
 
 export default function CreateDocumentForm({ onCreate }: CreateDocumentFormProps) {
@@ -15,9 +16,11 @@ export default function CreateDocumentForm({ onCreate }: CreateDocumentFormProps
     if (!trimmed) return;
 
     setSubmitting(true);
-    await onCreate(trimmed);
-    setSubmitting(false);
-    setTitle('');
+    try {
+      if (await onCreate(trimmed)) setTitle('');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

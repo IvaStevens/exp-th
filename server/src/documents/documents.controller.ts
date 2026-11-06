@@ -11,15 +11,13 @@ export class DocumentsController {
   }
 
   @Post()
-  async create(@Body() dto: { title: string }) {
-    return this.documentsService.create(dto.title);
+  async create(@Body() dto: { title?: unknown }) {
+    return this.documentsService.create(dto?.title);
   }
 
   @Post('bulk-delete')
-  async bulkDelete(@Body() dto: { ids: string[] }) {
-    for (const id of dto.ids) {
-      await this.documentsService.delete(id);
-    }
+  async bulkDelete(@Body() dto: { ids?: unknown }) {
+    await this.documentsService.deleteMany(dto?.ids);
 
     return { success: true };
   }
