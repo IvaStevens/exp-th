@@ -10,7 +10,7 @@
 - **Input validation.** `POST /documents` rejects a missing/blank/non-string title (400) and trims it; `POST /documents/bulk-delete` rejects a non-array / non-string `ids` (400) instead of crashing with a 500. Duplicate ids in a request are de-duplicated.
 
 **Client**
-- **Locked documents never showed as locked.** The client type used `locked: boolean`, but the API sends `lockedBy: string | null`, so `doc.locked` was always `undefined`. Type and `isLocked` now use `lockedBy`; the status cell shows who holds the lock.
+- **Locked documents never showed as locked.** The client type used `locked: boolean`, but the API sends `lockedBy: string | null`, so `doc.locked` was always `undefined`. Type and `isLocked` now use `lockedBy`.
 - **Server error messages are shown.** `api.ts` surfaces the server's `message` (e.g. "1 selected document(s) are locked. Nothing was deleted.") instead of a generic error.
 - **Selection survives a failed delete.** Previously the selection was cleared in `finally` even on failure. Now it is cleared only on success, so the user can deselect locked items and retry.
 - **Loading flicker / stale responses.** The "Loading…" placeholder only shows for the first load (reloads swap the list in place), and only the latest `load()` may write state (StrictMode double-fetch can't overwrite newer data). A successful load clears a stale error. The selection is pruned to ids that still exist.
