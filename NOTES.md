@@ -26,7 +26,6 @@
 - **Unknown id in a bulk delete → 404, nothing deleted** (same all-or-nothing rule). Alternative: treat as already-deleted/idempotent.
 - **Status codes:** 409 for locked, 404 for unknown, 400 for malformed input. Successful bulk delete keeps the README's `{ "success": true }` shape (status 201, Nest's default for POST); the API shape is otherwise unchanged.
 - **Locks cannot be changed.** There is no lock/unlock endpoint; locks exist only in the seed data. I left that alone since the ticket rules out new features.
-- **The reported 404 on `POST http://localhost:5173/documents/bulk-delete` is not an app bug.** The browser always shows the web origin because Vite proxies `/documents` to port 3000 (`client/vite.config.ts`), and the proxy config is correct. The route exists in the source and the build. It looks like a local setup problem: ports 3000/5173 were being held by another instance of the app (the sibling `exp-th` checkout) at the time I looked, so requests may hit a different/older server. Check that nothing else is using 3000/5173 and that `pnpm dev` is running from this checkout.
 
 ## Would flag in review, not fixed
 
